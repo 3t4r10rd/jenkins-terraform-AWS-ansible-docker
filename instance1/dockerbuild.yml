@@ -1,0 +1,43 @@
+---
+- name: Push dockerimage to registry
+  hosts: localhost
+  become: yes
+ 
+  tasks: 
+  - name: Ensure necessary application is present
+    apt:
+     name: "{{ item }}"
+     state: present
+#    update_cache: yes
+    with_items:
+     - docker.io
+#     - python-pip
+     - python3-pip
+
+  - name: Install docker-py
+    pip:
+     name: docker-py
+
+  - name: Make insecure-registries for nexus
+    lineinfile:
+     dest: /etc/docker/daemon.json
+     line: '{ "insecure-registries" : ["34.125.69.117:8888"] }'
+     create: yes
+
+  - name: Restart docker service
+    service:
+     name: docker
+     state: restarted 
+
+  - name: Login into registry
+    docker_login:
+     registry: 34.125.69.117:8888
+     username: admin
+     password: --some--password
+    
+  - name: Push docker-image in registry
+    docker_image:
+     name: 34.125.69.117:8888/test3
+     tag: 1
+     path: ./
+     push: yes
